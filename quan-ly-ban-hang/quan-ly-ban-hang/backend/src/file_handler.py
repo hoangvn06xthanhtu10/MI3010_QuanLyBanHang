@@ -4,12 +4,19 @@ Mô tả: Xử lý đọc/ghi file text thủ công, không dùng thư viện js
 Tự động tạo dữ liệu mầm (seed data) nếu file không tồn tại.
 """
 
+import os
 from models import SanPham, HoaDon
 
 # Hằng số cấu hình đường dẫn file
-PRODUCTS_FILE = "products.txt"
-INVOICES_FILE = "invoices.txt"
-DELIMITER = "|"  # Ký tự phân tách các trường dữ liệu
+THU_MUC_HIEN_TAI = os.path.dirname(os.path.abspath(__file__))
+
+# 2. Lùi ra 2 cấp (từ src -> backend -> quan-ly-ban-hang)
+THU_MUC_GOC = os.path.abspath(os.path.join(THU_MUC_HIEN_TAI, "..", ".."))
+
+# 3. Trỏ cứng vào thư mục database
+PRODUCTS_FILE = os.path.join(THU_MUC_GOC, "database", "products.txt")
+INVOICES_FILE = os.path.join(THU_MUC_GOC, "database", "invoices.txt")
+DELIMITER = "|"
 
 def tao_du_lieu_mam_san_pham():
     """Tạo dữ liệu mẫu cho file products.txt nếu chưa tồn tại"""
