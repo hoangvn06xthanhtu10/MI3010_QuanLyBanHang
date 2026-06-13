@@ -184,14 +184,13 @@ def lap_hoa_don(ma_kh, ngay_lap, danh_sach_mua):
     
     return hoa_don_moi, None
 
-def thong_ke_doanh_thu(ngay_bat_dau, ngay_ket_thuc):
+def thong_ke_doanh_thu(danh_sach_hd, ngay_bat_dau, ngay_ket_thuc):
     """
     Thống kê doanh thu trong khoảng ngày.
     - Duyệt tuần tự danh sách hóa đơn, kiểm tra ngày lập nằm trong khoảng.
     - Cộng dồn tổng thanh toán.
     - So sánh ngày thủ công bằng cách so sánh chuỗi YYYY-MM-DD.
     """
-    danh_sach_hd = doc_danh_sach_hoa_don()
     tong_doanh_thu = 0.0
     so_hoa_don = 0
     
@@ -201,4 +200,5 @@ def thong_ke_doanh_thu(ngay_bat_dau, ngay_ket_thuc):
             tong_doanh_thu += hd.tong_thanh_toan
             so_hoa_don += 1
     
-    return tong_doanh_thu, so_hoa_don
+    # Trả về đúng thứ tự: Số lượng hóa đơn trước, Tổng tiền sau
+    return so_hoa_don, tong_doanh_thu

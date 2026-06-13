@@ -3,16 +3,34 @@ Module: menu.py (CHƯƠNG TRÌNH CHÍNH)
 Mô tả: Giao diện Console đa cấp với đầy đủ chức năng.
 Có validation bắt lỗi đầu vào, hiển thị dạng bảng (tabular display).
 """
+import sys
+import os
 
+# 1. BẮC CẦU TỪ FRONTEND SANG BACKEND
+# Lấy vị trí file hiện tại (frontend/src/menu.py)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# Lùi ra 2 cấp (src -> frontend -> thư mục gốc), sau đó chui vào thư mục backend
+backend_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "backend", "src"))
+
+# Đưa backend vào danh sách hệ thống để Python có thể tìm thấy models, business,...
+sys.path.insert(0, backend_dir)
+
+# ==========================================
+# 2. SAU KHI BẮC CẦU XONG MỚI BẮT ĐẦU IMPORT
+# ==========================================
 from models import SanPham, HoaDon
-from file_handler import doc_danh_sach_san_pham, doc_danh_sach_hoa_don
-from file_handler import ghi_danh_sach_san_pham, ghi_danh_sach_hoa_don
+from file_handler import (doc_danh_sach_san_pham, doc_danh_sach_hoa_don, 
+                          ghi_danh_sach_san_pham, ghi_danh_sach_hoa_don,
+                          tao_du_lieu_mam_san_pham, tao_du_lieu_mam_hoa_don)
+
 from business import (sap_xep_noi_bot_san_pham_theo_gia, 
                       sap_xep_noi_bot_san_pham_theo_ton_kho,
                       tim_kiem_tuyen_tinh_san_pham_theo_ten,
                       tim_san_pham_theo_ma,
                       lap_hoa_don,
                       thong_ke_doanh_thu)
+
+# ... (Giữ nguyên toàn bộ các hàm nhap_so_nguyen, hien_thi_danh_sach,... ở dưới)
 
 # ===== HÀM VALIDATION - BẪY LỖI ĐẦU VÀO =====
 
@@ -93,21 +111,6 @@ def hien_thi_danh_sach_san_pham(danh_sach):
     print("=" * 95)
     print(f"Tổng số sản phẩm: {len(danh_sach)}")
 
-def hien_thi_chi_tiet_hoa_don(hd):
-    """Hiển thị chi tiết một hóa đơn."""
-    print("\n" + "=" * 60)
-    print(f"=== HÓA ĐƠN BÁN HÀNG ===")
-    print(f"Mã hóa đơn: {hd.ma_hd}")
-    print(f"Mã khách hàng: {hd.ma_kh}")
-    print(f"Ngày lập: {hd.ngay_lap}")
-    print("-" * 60)
-    print(f"Tổng tiền hàng: {hd.tong_tien_hang:,.0f} VNĐ")
-    print(f"Thuế VAT (8%): {hd.thue_vat:,.0f} VNĐ")
-    print(f"TỔNG THANH TOÁN: {hd.tong_thanh_toan:,.0f} VNĐ")
-    print("-" * 60)
-    print(f"Chi tiết mua: {hd.chi_tiet_mua}")
-    print("=" * 60)
-
 # ===== CÁC CHỨC NĂNG MENU =====
 
 def menu_them_san_pham():
@@ -170,7 +173,6 @@ def menu_sap_xep_san_pham():
     print("0. Quay lại")
     
     lua_chon = nhap_so_nguyen("Chọn: ", min_val=0, max_val=4)
-    
     if lua_chon == 0:
         return
     
@@ -183,10 +185,10 @@ def menu_sap_xep_san_pham():
         danh_sach = sap_xep_noi_bot_san_pham_theo_gia(danh_sach, tang_dan=False)
         print("[KẾT QUẢ] Đã sắp xếp theo giá giảm dần (Bubble Sort)")
     elif lua_chon == 3:
-        danh_sach = sap_xep_noi_bot_san_pham_theo_ton_kho(danh_sach, giam_dan=True)
+        danh_sach = sap_xep_noi_bot_san_pham_theo_ton_kho(danh_sach, tang_dan=False)
         print("[KẾT QUẢ] Đã sắp xếp theo tồn kho giảm dần (Bubble Sort)")
     elif lua_chon == 4:
-        danh_sach = sap_xep_noi_bot_san_pham_theo_ton_kho(danh_sach, giam_dan=False)
+        danh_sach = sap_xep_noi_bot_san_pham_theo_ton_kho(danh_sach, tang_dan=True)
         print("[KẾT QUẢ] Đã sắp xếp theo tồn kho tăng dần (Bubble Sort)")
     
     hien_thi_danh_sach_san_pham(danh_sach)
@@ -196,14 +198,12 @@ def menu_lap_hoa_don():
     """Lập hóa đơn bán hàng mới."""
     print("\n=== LẬP HÓA ĐƠN BÁN HÀNG ===")
     
-    # Hiển thị sản phẩm hiện có để người dùng tham khảo
     danh_sach_sp = doc_danh_sach_san_pham()
     hien_thi_danh_sach_san_pham(danh_sach_sp)
     
     ma_kh = nhap_chuoi_khong_trong("\nNhập mã khách hàng: ")
     ngay_lap = nhap_ngay("Nhập ngày lập hóa đơn (YYYY-MM-DD): ")
     
-    # Nhập danh sách sản phẩm mua
     danh_sach_mua = []
     so_mon = nhap_so_nguyen("Nhập số loại sản phẩm mua: ", min_val=1)
     
@@ -222,14 +222,15 @@ def menu_lap_hoa_don():
             danh_sach_mua.append((ma_sp, so_luong))
             break
     
-    # Thực hiện lập hóa đơn
+    # SỬA LẠI: Truyền đúng 3 tham số và nhận về 2 giá trị (hoa_don, loi)
     hoa_don, loi = lap_hoa_don(ma_kh, ngay_lap, danh_sach_mua)
     
     if loi:
         print(f"\n[THẤT BẠI] {loi}")
     else:
         print("\n[THÀNH CÔNG] Hóa đơn đã được lập!")
-        hien_thi_chi_tiet_hoa_don(hoa_don)
+        # Nếu cậu có hàm hien_thi_chi_tiet_hoa_don() thì mở comment dòng dưới
+        # hien_thi_chi_tiet_hoa_don(hoa_don)
 
 def menu_xem_hoa_don():
     """Xem danh sách hóa đơn."""
@@ -240,11 +241,13 @@ def menu_xem_hoa_don():
         return
     
     print("\n" + "=" * 90)
+    # Tiêu đề đang ghim lề phải với độ rộng: 15, 12, 15
     print(f"{'MÃ HĐ':<10} {'MÃ KH':<10} {'NGÀY LẬP':<12} {'TIỀN HÀNG':>15} {'VAT':>12} {'T.THANH TOÁN':>15}")
     print("-" * 90)
     
     for hd in danh_sach:
-        print(f"{hd.ma_hd:<10} {hd.ma_kh:<10} {hd.ngay_lap:<12} {hd.tong_tien_hang:>13,.0f} {hd.thue_vat:>10,.0f} {hd.tong_thanh_toan:>13,.0f}")
+        # Đã đồng bộ data thành 15, 12, 15 để khớp tuyệt đối với tiêu đề ở trên
+        print(f"{hd.ma_hd:<10} {hd.ma_kh:<10} {hd.ngay_lap:<12} {hd.tong_tien_hang:>15,.0f} {hd.thue_vat:>12,.0f} {hd.tong_thanh_toan:>15,.0f}")
     
     print("=" * 90)
     print(f"Tổng số hóa đơn: {len(danh_sach)}")
@@ -259,7 +262,10 @@ def menu_thong_ke_doanh_thu():
         print("[LỖI] Ngày bắt đầu phải trước hoặc bằng ngày kết thúc!")
         return
     
-    tong_doanh_thu, so_hoa_don = thong_ke_doanh_thu(ngay_bd, ngay_kt)
+    danh_sach_hd = doc_danh_sach_hoa_don()
+    
+    # SỬA LỖI TRUYỀN THAM SỐ Ở ĐÂY
+    so_hoa_don, tong_doanh_thu = thong_ke_doanh_thu(danh_sach_hd, ngay_bd, ngay_kt)
     
     print("\n" + "=" * 50)
     print(f"=== KẾT QUẢ THỐNG KÊ ===")
@@ -275,7 +281,7 @@ def menu_chinh():
     while True:
         print("\n" + "=" * 50)
         print("=== HỆ THỐNG QUẢN LÝ BÁN HÀNG ===")
-        print("=== CỬA HÀNG MÁY TÍNH & LINH KIỆN PC ===")
+        print("=== CỬA HÀNG MÁY TÍNH HUST FAMI ===")
         print("=" * 50)
         print("1. QUẢN LÝ SẢN PHẨM")
         print("2. QUẢN LÝ BÁN HÀNG")
@@ -339,19 +345,15 @@ def menu_ban_hang():
 
 if __name__ == "__main__":
     print("=== KHỞI ĐỘNG HỆ THỐNG ===")
-    print("[HỆ THỐNG] Đang nạp dữ liệu từ file...")
+    print("[HỆ THỐNG] Đang kiểm tra dữ liệu...")
     
-    # Kiểm tra và tạo file dữ liệu nếu chưa tồn tại
-    try:
-        open('products.txt', 'r')
-    except FileNotFoundError:
-        from file_handler import tao_du_lieu_mam_san_pham
+    # LƯỢC BỎ HARDCODE: Sử dụng trực tiếp logic của file_handler
+    sp_hien_tai = doc_danh_sach_san_pham()
+    if not sp_hien_tai:
         tao_du_lieu_mam_san_pham()
-    
-    try:
-        open('invoices.txt', 'r')
-    except FileNotFoundError:
-        from file_handler import tao_du_lieu_mam_hoa_don
+        
+    hd_hien_tai = doc_danh_sach_hoa_don()
+    if not hd_hien_tai:
         tao_du_lieu_mam_hoa_don()
     
     print("[HỆ THỐNG] Sẵn sàng phục vụ!")
